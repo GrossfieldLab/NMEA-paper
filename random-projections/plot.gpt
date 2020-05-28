@@ -1,0 +1,16 @@
+
+set terminal png enhanced font "Arial,12"
+set output "cums.png"
+
+set xlabel "Absolute dot product"
+set ylabel "Cumulative probabilty"
+
+plot "456_dim.cum" u 1:2 lw 4 title "Loop" w l, \
+     "1536_dim.cum" u 1:2 lw 4 title "Full" w l
+
+set output "dists.png"
+set ylabel "Probability"
+
+
+plot "456_dim.hist" u 1:2 lw 4 title "Loop" w l, \
+     "1536_dim.hist" u 1:2 lw 4 title "Full" w l
