@@ -1,0 +1,112 @@
+source simparms.inp
+
+set CYCLES  5000000
+set MACROCYCLES 10
+
+
+# molecular system
+structure namd.psf
+
+# Key input and output files
+coordinates equilibrated.pdb  # will be ignored if restarting
+outputname output_npt/npt_bgq.SEQ
+restartname output_npt/npt_restart.SEQ
+XSTfile output_npt/cell_params_npt.SEQ.dat
+
+
+#bincoordinates output_npt/npt_restart.PREVSEQ.coor
+#binvelocities output_npt/npt_restart.PREVSEQ.vel
+#extendedSystem output_npt/npt_restart.PREVSEQ.xsc
+#firsttimestep 0
+temperature 300K   # commented out for use in restart file
+
+# Key output frequencies -- this script works best if they're all equal
+dcdfreq        50000
+restartfreq    50000
+outputenergies 50000
+outputTiming   50000
+XSTfreq        50000
+
+
+stepsPerCycle  20
+
+# restart files
+binaryrestart yes
+
+#forcefield
+paratypecharmm on
+parameters ../toppar/par_all36_prot_mod.prm
+parameters ../toppar/par_all36_lipid.prm
+parameters ../toppar/par_all36_carb.prm
+parameters ../toppar/par_all36_cgenff.prm
+parameters ../toppar/toppar_water_ions_namd.str
+
+
+exclude scaled1-4
+1-4scaling 1.0
+
+switching on
+switchdist 9
+cutoff 10
+pairlistdist 12
+
+#integrator
+timestep 2.0
+
+#output 
+binaryoutput yes
+
+# center of mass motion
+COMmotion no
+zeroMomentum yes
+
+# turn on shake
+rigidBonds all
+rigidTolerance 0.0000000001
+useSettle on
+
+# PME: can probably safely drop this to 96 x 96 x 96 -- check timing
+PME on
+PMEGridSizeX $GRIDSIZEX
+PMEGridSizeY $GRIDSIZEY
+PMEGridSizeZ $GRIDSIZEZ
+
+# periodic boundary
+
+# Box updated from full_system_0.pdb
+cellBasisVector1 $BOXSIZEX 0 0
+cellBasisVector2 0 $BOXSIZEY 0
+cellBasisVector3 0 0 $BOXSIZEZ
+wrapAll on  # turn on reimaging
+
+
+
+# temperature control
+langevin on
+langevinTemp 300
+langevinDamping 2
+langevinHydrogen off
+
+# pressure control
+LangevinPiston on
+LangevinPistonTarget 1.01325 # 1 atm
+LangevinPistonPeriod 200
+LangevinPistonDecay 100
+LangevinPistonTemp 300
+useFlexibleCell no
+useConstantArea no
+
+
+LdbPeriod 20000
+
+### legacy
+numAtomsSelf 88
+numAtomsPair 140
+
+
+
+LdbUnloadPme yes
+
+for { set i 1 } { $i <= $MACROCYCLES } { incr i 1 } {
+   run $CYCLES
+}

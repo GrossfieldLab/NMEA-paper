@@ -1,0 +1,71 @@
+* Vibrational mode calculation for HEWL
+*
+
+BOMLEV -2
+
+! protein topology and parameter
+open read card unit 10 name ../../toppar/top_all36_prot.rtf
+read  rtf card unit 10
+
+open read card unit 20 name ../../toppar/par_all36_prot.prm
+read para card unit 20 flex
+
+! carbohydrates
+open read card unit 10 name ../../toppar/top_all36_carb.rtf
+read  rtf card unit 10 append
+
+open read card unit 20 name ../../toppar/par_all36_carb.prm
+read para card unit 20 append flex
+
+! Read additional topology and parameter file for water and ions
+stream ../../toppar/toppar_water_ions.str
+
+
+OPEN UNIT 12 read form name ../../charmmed.psf
+READ PSF card unit 12
+CLOSe UNIT 12
+
+OPEN UNIT 13 read form name frame.pdb
+READ COOR pdb unit 13 resid
+CLOSe UNIT 13
+
+
+* Adjust water shell radius as necessary
+delete atom sort -
+select .byres. ( .not. ( segid PROA .around. 12 ) ) -
+end
+
+
+
+* Make sure no ions are around...
+
+delete atom sort -
+select .byres. segid CLA -
+end
+
+
+open write card unit 30 name deleted.pdb
+write coor pdb unit 30 official
+
+
+
+MINImize SD NSTEp 200
+minimize powe nstep 4000 nprint 100
+MINImize ABNR NSTEp  20000  TOLG 1E-5 NPRInt 100
+
+open write card unit 31 name minimized.pdb
+write coor pdb unit 31 official
+
+
+
+* Depending on system, may need to calculate more modes...  CEWL was
+* fine with 2000, but OCP needed ~8000
+VIBRan NMODes 20000
+DIAG
+
+PRINt NORM VECTOR DIPOLE
+
+
+END
+
+STOP

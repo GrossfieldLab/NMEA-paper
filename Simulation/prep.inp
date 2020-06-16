@@ -1,0 +1,148 @@
+source simparms.inp
+
+# molecular system
+structure namd.psf
+
+# Key input and output files
+coordinates start.pdb  # will be ignored if restarting
+outputname      output/heat_out
+restartname     output/restart
+XSTfile         output/cell_params
+dcdFile         output/equi_out.dcd
+
+firsttimestep 0
+temperature 300K   # commented out for use in restart file
+
+# Key output frequencies -- this script works best if they're all equal
+dcdfreq        1000
+restartfreq    1000
+outputenergies 1000
+outputTiming   1000
+XSTfreq        1000
+
+
+stepsPerCycle  20
+
+# restart files
+binaryrestart yes
+
+#forcefield
+paratypecharmm on
+parameters ../toppar/par_all36_prot_mod.prm
+parameters ../toppar/par_all36_lipid.prm
+parameters ../toppar/par_all36_carb.prm
+parameters ../toppar/par_all36_cgenff.prm
+parameters ../toppar/toppar_water_ions_namd.str
+
+exclude scaled1-4
+1-4scaling 1.0
+
+switching on
+switchdist 9
+cutoff 10
+pairlistdist 12
+
+#integrator
+timestep 2.0
+
+#output 
+binaryoutput yes
+
+# center of mass motion
+COMmotion no
+zeroMomentum yes
+
+# turn on shake
+rigidBonds all
+rigidTolerance 0.0000000001
+useSettle on
+
+# PME: can probably safely drop this to 96 x 96 x 96 -- check timing
+PME on
+PMEGridSizeX $GRIDSIZEX
+PMEGridSizeY $GRIDSIZEY
+PMEGridSizeZ $GRIDSIZEZ
+
+# periodic boundary
+
+# Box updated from full_system_0.pdb
+cellBasisVector1 $BOXSIZEX 0 0
+cellBasisVector2 0 $BOXSIZEY 0
+cellBasisVector3 0 0 $BOXSIZEZ
+wrapAll on  # turn on reimaging
+
+
+
+# temperature control
+langevin on
+langevinTemp 300
+langevinDamping 2
+langevinHydrogen off
+
+# pressure control
+LangevinPiston on
+LangevinPistonTarget 1.01325 # 1 atm
+LangevinPistonPeriod 200
+LangevinPistonDecay 100
+LangevinPistonTemp 300
+#useFlexibleCell no
+#useConstantArea no
+
+
+LdbPeriod 20000
+
+### legacy
+numAtomsSelf 88
+numAtomsPair 140
+
+
+
+LdbUnloadPme yes
+
+
+########################### PREP BLOCK #########################
+
+fixedAtoms                  on
+fixedAtomsForces            on
+fixedAtomsFile              fixed_backbone.pdb
+fixedAtomsCol               B
+
+constraints                 on
+consRef                     restraints.pdb
+conskFile                   restraints.pdb
+consExp                     2
+conskCol                    B
+constraintScaling          20
+
+
+minimize                    0
+
+langevinTemp		    30
+
+langevinPiston              off
+
+minimize                    1000
+outputName                  output/min_fix
+
+fixedAtoms                  off
+minimize                    1000
+outputName                  output/min_all
+
+for { set TEMP 30 } { $TEMP < 300 } { incr TEMP 30 } {
+    run 10000
+    langevinTemp $TEMP
+}
+
+langevinTemp 300
+run 10000
+outputName                  output/heat_ca
+
+
+
+langevinPiston              on
+run                         10000
+outputName                  output/equil_ca
+
+constraintScaling           0
+run                         100000
+
