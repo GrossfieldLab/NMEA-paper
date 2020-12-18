@@ -1,7 +1,8 @@
 # NMEA-paper
 Scripts used to generate data and figures for anisotropic terahertz spectroscopy paper
 
-Romo, Grossfield, and Markelz, "Identification of functionally important collective vibrations through terahertz Normal Mode Ensemble Analysis"
+Romo, T. D., et al. (2020) Persistent Protein Motions in a Rugged Energy Landscape Revealed by Normal Mode Ensemble Analysis. Journal of Chemical Information and Modeling  DOI: 10.1021/acs.jcim.0c00879
+
 
 Simulation: parameters and input files for running the MD simulations
 
